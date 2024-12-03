@@ -11,6 +11,41 @@ pub const gpa = gpa_impl.allocator();
 
 // Add utility functions here
 
+pub fn createArrayFromSplitIteratorU8(it: *std.mem.SplitIterator(u8, std.mem.DelimiterType.scalar)) ![][]const u8 {
+    var list = std.ArrayList([]const u8).init(std.heap.page_allocator);
+    defer list.deinit();
+
+    while (it.next()) |item| {
+        try list.append(item);
+    }
+
+    return list.toOwnedSlice();
+}
+
+pub fn splitInputIntoLines(data: []const u8) ![][]const u8 {
+    var linesIt = splitSca(u8, data, '\n');
+    var list = std.ArrayList([]const u8).init(std.heap.page_allocator);
+    defer list.deinit();
+
+    while (linesIt.next()) |item| {
+        try list.append(item);
+    }
+
+    return list.toOwnedSlice();
+}
+
+pub fn splitScaToNum(T: type, U: type, buffer: []const T, delimiter: T) ![]U {
+    var it = splitSca(T, buffer, delimiter);
+    var list = std.ArrayList(U).init(std.heap.page_allocator);
+    defer list.deinit();
+
+    while (it.next()) |item| {
+        try list.append(try parseInt(U, item, 10));
+    }
+
+    return list.toOwnedSlice();
+}
+
 // Useful stdlib functions
 const tokenizeAny = std.mem.tokenizeAny;
 const tokenizeSeq = std.mem.tokenizeSequence;

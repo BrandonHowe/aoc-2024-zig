@@ -11,17 +11,135 @@ const gpa = util.gpa;
 const data = @embedFile("data/day03.txt");
 const stdout = std.io.getStdOut().writer();
 
-pub fn part1() void {}
+pub fn part1() !void {
+    var slice: []const u8 = data[0..];
+    var total: i32 = 0;
+    while (slice.len > 3)
+    {
+        if (std.mem.eql(u8, "mul", slice[0..3]))
+        {
+            var left: i32 = 0;
+            var right: i32 = 0;
+            slice = slice[3..];
+            if (slice[0] != '(')
+            {
+                continue;
+            }
+            else
+            {
+                slice = slice[1..];
+            }
+            while (slice[0] >= '0' and slice[0] <= '9')
+            {
+                left *= 10;
+                left += slice[0] - '0';
+                slice = slice[1..];
+            }
+            if (slice[0] != ',')
+            {
+                continue;
+            }
+            else
+            {
+                slice = slice[1..];
+            }
+            while (slice[0] >= '0' and slice[0] <= '9')
+            {
+                right *= 10;
+                right += slice[0] - '0';
+                slice = slice[1..];
+            }
+            if (slice[0] != ')')
+            {
+                continue;
+            }
+            else
+            {
+                slice = slice[1..];
+            }
+            total += left * right;
+        }
+        else {
+            slice = slice[1..];
+        }
+    }
+    try stdout.print("Part 1: {}\n", .{total});
+}
 
-pub fn part2() void {}
+pub fn part2() !void {
+
+    var slice: []const u8 = data[0..];
+    var total: i32 = 0;
+    var mulEnabled = true;
+    while (slice.len > 6)
+    {
+        if (std.mem.eql(u8, "do()", slice[0..4]))
+        {
+            mulEnabled = true;
+            slice = slice[4..];
+        }
+        else if (std.mem.eql(u8, "don't()", slice[0..7]))
+        {
+            mulEnabled = false;
+            slice = slice[6..];
+        }
+        else if (mulEnabled and std.mem.eql(u8, "mul", slice[0..3]))
+        {
+            var left: i32 = 0;
+            var right: i32 = 0;
+            slice = slice[3..];
+            if (slice[0] != '(')
+            {
+                continue;
+            }
+            else
+            {
+                slice = slice[1..];
+            }
+            while (slice[0] >= '0' and slice[0] <= '9')
+            {
+                left *= 10;
+                left += slice[0] - '0';
+                slice = slice[1..];
+            }
+            if (slice[0] != ',')
+            {
+                continue;
+            }
+            else
+            {
+                slice = slice[1..];
+            }
+            while (slice[0] >= '0' and slice[0] <= '9')
+            {
+                right *= 10;
+                right += slice[0] - '0';
+                slice = slice[1..];
+            }
+            if (slice[0] != ')')
+            {
+                continue;
+            }
+            else
+            {
+                slice = slice[1..];
+            }
+            total += left * right;
+        }
+        else {
+            slice = slice[1..];
+        }
+    }
+    try stdout.print("Part 2: {}\n", .{total});
+}
 
 pub fn main() !void
 {
     const t1 = std.time.milliTimestamp();
-    part1();
+    try part1();
     const t2 = std.time.milliTimestamp();
     try stdout.print("Part 1: {}ms\n", .{t2 - t1});
-    part2();
+    try part2();
     const t3 = std.time.milliTimestamp();
     try stdout.print("Part 2: {}ms\n", .{t3 - t2});
 }

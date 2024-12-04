@@ -11,17 +11,23 @@ const gpa = util.gpa;
 const data = @embedFile("data/day18.txt");
 const stdout = std.io.getStdOut().writer();
 
-pub fn part1() void {}
+pub fn part1() !void
+{
+    try stdout.print("Part 1: {}\n", .{});
+}
 
-pub fn part2() void {}
+pub fn part2() !void
+{
+    try stdout.print("Part 2: {}\n", .{});
+}
 
 pub fn main() !void
 {
     const t1 = std.time.milliTimestamp();
-    part1();
+    try part1();
     const t2 = std.time.milliTimestamp();
     try stdout.print("Part 1: {}ms\n", .{t2 - t1});
-    part2();
+    try part2();
     const t3 = std.time.milliTimestamp();
     try stdout.print("Part 2: {}ms\n", .{t3 - t2});
 }

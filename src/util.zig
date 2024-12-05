@@ -22,9 +22,9 @@ pub fn createArrayFromSplitIteratorU8(it: *std.mem.SplitIterator(u8, std.mem.Del
     return list.toOwnedSlice();
 }
 
-pub fn splitInputIntoLines(data: []const u8) ![][]const u8 {
+pub fn splitInputIntoLines(data: []const u8, allocator: Allocator) ![][]const u8 {
     var linesIt = splitSca(u8, data, '\n');
-    var list = std.ArrayList([]const u8).init(std.heap.page_allocator);
+    var list = std.ArrayList([]const u8).init(allocator);
     defer list.deinit();
 
     while (linesIt.next()) |item| {
@@ -34,9 +34,9 @@ pub fn splitInputIntoLines(data: []const u8) ![][]const u8 {
     return list.toOwnedSlice();
 }
 
-pub fn splitScaToNum(T: type, U: type, buffer: []const T, delimiter: T) ![]U {
+pub fn splitScaToNum(T: type, U: type, buffer: []const T, delimiter: T, allocator: Allocator) ![]U {
     var it = splitSca(T, buffer, delimiter);
-    var list = std.ArrayList(U).init(std.heap.page_allocator);
+    var list = std.ArrayList(U).init(allocator);
     defer list.deinit();
 
     while (it.next()) |item| {

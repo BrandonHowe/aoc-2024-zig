@@ -13,12 +13,85 @@ const stdout = std.io.getStdOut().writer();
 
 pub fn part1() !void
 {
-    try stdout.print("Part 1: {}\n", .{});
+    var arena = std.heap.ArenaAllocator.init(gpa);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+    var lines = splitSca(u8, data, '\n');
+    var total: i64 = 0;
+    lines: while (lines.next()) |line|
+    {
+        var splitLine = splitSeq(u8, line, ": ");
+        const target = try parseInt(i64, splitLine.next() orelse "", 10);
+        const nums = try util.splitScaToNum(u8, i64, splitLine.next() orelse "", ' ', allocator);
+        const opCount = nums.len - 1;
+        op: for (0..@intCast(std.math.shl(u16, 1, opCount))) |ops|
+        {
+            var computed: i64 = nums[0];
+            for (0..opCount) |i|
+            {
+                if ((ops & @as(usize, std.math.shl(u16, 1, i))) == 0)
+                {
+                    computed += nums[i + 1];
+                }
+                else
+                {
+                    computed *= nums[i + 1];
+                }
+                if (computed > target) continue :op;
+            }
+            if (computed == target)
+            {
+                total += target;
+                continue :lines;
+            }
+        }
+    }
+    try stdout.print("Part 1: {}\n", .{total});
 }
 
 pub fn part2() !void
 {
-    try stdout.print("Part 2: {}\n", .{});
+    var arena = std.heap.ArenaAllocator.init(gpa);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+    var lines = splitSca(u8, data, '\n');
+    var total: i64 = 0;
+    lines: while (lines.next()) |line|
+    {
+        var splitLine = splitSeq(u8, line, ": ");
+        const target = try parseInt(i64, splitLine.next() orelse "", 10);
+        const nums = try util.splitScaToNum(u8, i64, splitLine.next() orelse "", ' ', allocator);
+        const opCount = nums.len - 1;
+        op: for (0..@intCast(std.math.pow(u32, 3, @intCast(opCount)))) |ops|
+        {
+            var computed: i64 = nums[0];
+            for (0..opCount) |i|
+            {
+                const state = (ops / std.math.pow(u32, 3, @intCast(i))) % 3;
+                if (state == 0)
+                {
+                    computed += nums[i + 1];
+                }
+                else if (state == 1)
+                {
+                    computed *= nums[i + 1];
+                }
+                else if (state == 2)
+                {
+                    const digits = std.math.log10(@abs(nums[i + 1])) + 1;
+                    computed *= std.math.pow(i64, 10, @intCast(digits));
+                    computed += nums[i + 1];
+                }
+                if (computed > target) continue :op;
+            }
+            if (computed == target)
+            {
+                total += target;
+                continue :lines;
+            }
+        }
+    }
+    try stdout.print("Part 2: {}\n", .{total});
 }
 
 pub fn main() !void

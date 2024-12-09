@@ -13,12 +13,144 @@ const stdout = std.io.getStdOut().writer();
 
 pub fn part1() !void
 {
-    try stdout.print("Part 1: {}\n", .{});
+    var totalBytes: u32 = 0;
+    var contentBytes: u32 = 0;
+    for (data, 0..) |c, i|
+    {
+        totalBytes += c - '0';
+        if (i % 2 == 0) contentBytes += c - '0';
+    }
+    var filesystem: []i16 = try gpa.alloc(i16, totalBytes);
+    defer gpa.free(filesystem);
+    {
+        var head: u32 = 0;
+        var fileIdx: i16 = 0;
+        for (data, 0..) |c, i|
+        {
+            const bytes = c - '0';
+            for (0..bytes) |j|
+            {
+                filesystem[head + j] = if (i % 2 == 1) -1 else fileIdx;
+            }
+            if (i % 2 == 0)
+            {
+                fileIdx += 1;
+            }
+            head += bytes;
+        }
+    }
+    {
+        var tail: u32 = totalBytes - 1;
+        var head: u32 = 0;
+        while (tail >= contentBytes)
+        {
+            if (filesystem[tail] == -1)
+            {
+                tail -= 1;
+                continue;
+            }
+            firstEmptySlotFinder: for (head..filesystem.len) |i|
+            {
+                if (filesystem[i] == -1)
+                {
+                    filesystem[i] = filesystem[tail];
+                    filesystem[tail] = -1;
+                    head = @intCast(i + 1);
+                    break :firstEmptySlotFinder;
+                }
+            }
+            tail -= 1;
+        }
+    }
+    var checksum: i128 = 0;
+    for (0..contentBytes) |i|
+    {
+        checksum += @as(i128, filesystem[i]) * @as(i128, i);
+    }
+    try stdout.print("Part 1: {}\n", .{checksum});
 }
+
+const File = struct
+{
+    id: i16,
+    len: u8
+};
 
 pub fn part2() !void
 {
-    try stdout.print("Part 2: {}\n", .{});
+    var totalBytes: u32 = 0;
+    var contentBytes: u32 = 0;
+    for (data, 0..) |c, i|
+    {
+        totalBytes += c - '0';
+        if (i % 2 == 0) contentBytes += c - '0';
+    }
+    var filesystem: List(File) = List(File).init(gpa);
+    defer filesystem.clearAndFree();
+
+    var fileIdx: i16 = 0;
+    for (data, 0..) |c, i|
+    {
+        const bytes = c - '0';
+        try filesystem.append(File{ .id = if (i % 2 == 1) -1 else fileIdx, .len = bytes });
+        if (i % 2 == 0)
+        {
+            fileIdx += 1;
+        }
+    }
+
+    fileIdx -= 1;
+    while (fileIdx > 0)
+    {
+        var file: File = undefined;
+        var filePos: u32 = 0;
+        for (filesystem.items, 0..) |f, i|
+        {
+            if (f.id == fileIdx)
+            {
+                file = f;
+                filePos = @intCast(i);
+                break;
+            }
+        }
+        for (filesystem.items, 0..) |*block, i|
+        {
+            if (i >= filePos) break;
+            if (block.id == -1)
+            {
+                if (block.len == file.len)
+                {
+                    block.id = file.id;
+                    filesystem.items[filePos].id = -1;
+                    break;
+                }
+                if (block.len >= file.len)
+                {
+                    block.len -= file.len;
+                    filesystem.items[filePos].id = -1;
+                    try filesystem.insert(i, file);
+                    break;
+                }
+            }
+        }
+        fileIdx -= 1;
+    }
+
+    var checksum: i128 = 0;
+    var head: usize = 0;
+    for (filesystem.items) |file|
+    {
+        if (file.id != -1)
+        {
+            for (0..file.len) |i|
+            {
+                checksum += @as(i128, file.id) * @as(i128, head + i);
+            }
+        }
+        head += file.len;
+    }
+    
+    try stdout.print("Part 2: {}\n", .{checksum});
 }
 
 pub fn main() !void

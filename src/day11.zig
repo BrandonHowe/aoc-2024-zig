@@ -11,14 +11,120 @@ const gpa = util.gpa;
 const data = @embedFile("data/day11.txt");
 const stdout = std.io.getStdOut().writer();
 
+pub fn solve(iters: u8) !u64
+{
+    var map = Map(u64, u64).init(gpa);
+    defer map.deinit();
+
+    {
+        var it = splitSca(u8, data, ' ');
+        while (it.next()) |item| {
+            const parsed = try parseInt(u64, item, 10);
+            if (map.get(parsed)) |val|
+            {
+                try map.put(parsed, val + 1);
+            }
+            else
+            {
+                try map.put(parsed, 1);
+            }
+        }
+    }
+    var secondMap = Map(u64, u64).init(gpa);
+
+    for (0..iters) |iter|
+    {
+        _ = iter;
+        var it = map.keyIterator();
+        while (it.next()) |k|
+        {
+            const key = k.*;
+            const count = map.get(key).?;
+            if (key == 0)
+            {
+                if (secondMap.get(1)) |val|
+                {
+                    try secondMap.put(1, val + count);
+                }
+                else
+                {
+                    try secondMap.put(1, count);
+                }
+            }
+            else
+            {
+                const digitCount = std.math.log10(key) + 1;
+                if (digitCount & 1 == 0)
+                {
+                    var halfThreshold: u64 = 1;
+                    for (0..(digitCount / 2)) |_|
+                    {
+                        halfThreshold *= 10;
+                    }
+                    const leftHalf = key / halfThreshold;
+                    const rightHalf = key % halfThreshold;
+                    if (secondMap.get(leftHalf)) |val|
+                    {
+                        try secondMap.put(leftHalf, val + count);
+                    }
+                    else
+                    {
+                        try secondMap.put(leftHalf, count);
+                    }
+
+                    if (secondMap.get(rightHalf)) |val|
+                    {
+                        try secondMap.put(rightHalf, val + count);
+                    }
+                    else
+                    {
+                        try secondMap.put(rightHalf, count);
+                    }
+                }
+                else
+                {
+                    const newVal = key * 2024;
+                    if (secondMap.get(newVal)) |val|
+                    {
+                        try secondMap.put(newVal, val + count);
+                    }
+                    else
+                    {
+                        try secondMap.put(newVal, count);
+                    }
+                }
+            }
+        }
+
+        map.clearRetainingCapacity();
+        var it2 = secondMap.keyIterator();
+        while (it2.next()) |key|
+        {
+            try map.put(key.*, secondMap.get(key.*).?);
+        }
+        secondMap.clearRetainingCapacity();
+    }
+
+    var total: u64 = 0;
+    {
+        var it = map.valueIterator();
+        while (it.next()) |val|
+        {
+            total += val.*;
+        }
+    }
+
+    return total;
+}
+
 pub fn part1() !void
 {
-    try stdout.print("Part 1: {}\n", .{});
+    try stdout.print("Part 1: {}\n", .{try solve(25)});
 }
 
 pub fn part2() !void
 {
-    try stdout.print("Part 2: {}\n", .{});
+    try stdout.print("Part 2: {}\n", .{try solve(75)});
 }
 
 pub fn main() !void

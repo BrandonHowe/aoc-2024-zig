@@ -11,14 +11,119 @@ const gpa = util.gpa;
 const data = @embedFile("data/day18.txt");
 const stdout = std.io.getStdOut().writer();
 
+const Vec2 = struct
+{
+    x: u8,
+    y: u8
+};
+
+const width = 70;
+const height = 70;
+
+pub fn runLoop(points: Map(Vec2, bool)) !u32
+{
+    var visited = Map(Vec2, bool).init(gpa);
+    defer visited.clearAndFree();
+    var current = List(Vec2).init(gpa);
+    defer current.clearAndFree();
+    var next = Map(Vec2, bool).init(gpa);
+    defer next.clearAndFree();
+    var iters: u32 = 0;
+
+    const origin: Vec2 = Vec2{ .x = 0, .y = 0 };
+    try current.append(origin);
+    try visited.put(origin, true);
+
+    return mainLoop: while (true)
+    {
+        if (current.items.len == 0) break 0;
+        iters += 1;
+        for (current.items) |item|
+        {
+            if (item.x > 0)
+            {
+                const left = Vec2{ .x = item.x - 1, .y = item.y };
+                if (!(visited.get(left) orelse false) and !(points.get(left) orelse false))
+                {
+                    try next.put(left, true);
+                }
+            }
+            if (item.y > 0)
+            {
+                const top = Vec2{ .x = item.x, .y = item.y - 1 };
+                if (!(visited.get(top) orelse false) and !(points.get(top) orelse false))
+                {
+                    try next.put(top, true);
+                }
+            }
+            if (item.x < width)
+            {
+                const right = Vec2{ .x = item.x + 1, .y = item.y };
+                if (!(visited.get(right) orelse false) and !(points.get(right) orelse false))
+                {
+                    try next.put(right, true);
+                }
+            }
+            if (item.y < height)
+            {
+                const bottom = Vec2{ .x = item.x, .y = item.y + 1 };
+                if (!(visited.get(bottom) orelse false) and !(points.get(bottom) orelse false))
+                {
+                    try next.put(bottom, true);
+                }
+            }
+        }
+        current.clearRetainingCapacity();
+        var it = next.keyIterator();
+        while (it.next()) |item|
+        {
+            if (item.x == width and item.y == height) break :mainLoop iters;
+            try current.append(item.*);
+            try visited.put(item.*, true);
+        }
+        next.clearRetainingCapacity();
+    };
+}
+
 pub fn part1() !void
 {
-    try stdout.print("Part 1: {}\n", .{});
+    var points = Map(Vec2, bool).init(gpa);
+    defer points.clearAndFree();
+    var lines = splitSca(u8, data, '\n');
+    while (lines.next()) |line|
+    {
+        if (points.count() >= 1024) break;
+        var splitLine = splitSca(u8, line, ',');
+        const x = try parseInt(u8, splitLine.next().?, 10);
+        const y = try parseInt(u8, splitLine.next().?, 10);
+        try points.put(Vec2{ .x = x, .y = y }, true);
+    }
+
+    const res = try runLoop(points);
+    
+    try stdout.print("Part 1: {}\n", .{res});
 }
 
 pub fn part2() !void
 {
-    try stdout.print("Part 2: {}\n", .{});
+    var points = Map(Vec2, bool).init(gpa);
+    defer points.clearAndFree();
+    var lines = splitSca(u8, data, '\n');
+    const killingPoint = blk: {
+        while (lines.next()) |line|
+        {
+            var splitLine = splitSca(u8, line, ',');
+            const x = try parseInt(u8, splitLine.next().?, 10);
+            const y = try parseInt(u8, splitLine.next().?, 10);
+            try points.put(Vec2{ .x = x, .y = y }, true);
+            if (points.count() >= 1024 and try runLoop(points) == 0)
+            {
+                break :blk Vec2{ .x = x, .y = y };
+            }
+        }
+        break :blk Vec2{ .x = 0, .y = 0 };
+    };
+    try stdout.print("Part 2: {},{}\n", .{killingPoint.x, killingPoint.y});
 }
 
 pub fn main() !void
